@@ -7,5 +7,7 @@ It is a mandatory course of PGT Computer Science programme.The matierial comes f
 
 ## More 
 "Good Luck!"
+
 Quoted from Joseph Hallett
+
 ……
