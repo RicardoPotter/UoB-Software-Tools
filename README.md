@@ -1,5 +1,5 @@
 # UoB COMSM0085 Software Tools
-[中文](./README_ZH.md) | English
+[中文](./README_zh.md) | English
 ## Foreword
 Just a reference matierial for the future students attend the course.
 
