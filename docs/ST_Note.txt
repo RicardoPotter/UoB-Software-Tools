@@ -1,0 +1,549 @@
+Week 1:
+====================================================================== 
+1.1  System Administration
+------------------------------------------------------------------------------------------------------------------
+SSH(Secure shell)
+
+//启动本地主机
+	ssh localhost
+
+//连接至seis
+	ssh USERNAME@seis.bris.ac.uk
+
+//打印系统信息
+	uname -a
+
+//以seis为中介，连接至labmachine
+	ssh rd-mvb-linuxlab.bristol.ac.uk
+
+//打印用户信息
+	whoami
+
+//以seis为跳板，连接至labmachine（-J）
+	ssh -J USERNAME@seis.bris.ac.uk USERNAME@rd-mvb-linuxlab.bristol.ac.uk
+
+Set SSH key
+
+//生成ssh密钥，ed25519是密钥类型，保存到 ~/.ssh
+	ssh-keygen -t ed25519
+
+//显示文件信息：权限 硬连接数 所有者 所属组 文件大小 修改时间 名称
+//权限依次为：(-)(rwx)(---)(---)  所有者权限，小组权限，所有人权限
+//-a表示显示隐藏文件（一些以 . 开头的文件）
+	ls -al FILENAME
+
+//通过SCP将本地文件复制到远程服务器
+//scp source destination
+	scp ~/.ssh/id_ed25519.pub "USERNAME@seis.bris.ac.uk:~/.ssh/"
+
+//在远端服务器将公钥添加至authorized_keys，并且修改相关权限
+	cd .ssh
+	cat id_ed25519.pub >> authorized_keys
+	chmod 600 authorized_keys
+
+//SSH具有agent forward特性，通过seis再如上述步骤一般在labmachine设置一下
+//即可直接访问lab machine（不用输入密码）
+	ssh -A -J USERNAME@seis.bris.ac.uk USERNAME@rd-mvb-linuxlab.bristol.ac.uk
+
+//config脚本（位于.ssh文件夹内）
+//保存后可以直接使用 ssh seis/lab 进行访问
+	Host seis
+  		HostName seis.bris.ac.uk
+ 		 User USERNAME
+
+	Host lab
+  		HostName rd-mvb-linuxlab.bristol.ac.uk
+  		ProxyJump seis
+  		User USERNAME
+
+//Vagrant 的 Ruby 配置语法配置虚拟机
+
+	Vagrant.configure("2") do |config|
+ 		config.vm.box = "generic/debian12"
+  		config.vm.synced_folder ".", "/vagrant"
+
+  		config.vm.provision "shell", inline: <<-SHELL
+    			echo "Post-provision installs go here"       	//该行为shell脚本内容，会在虚拟机启动后执行
+  		SHELL
+	end
+
+//虚拟机操作
+	
+	vagrant up		//启动虚拟机
+	vagrant ssh 		//连接至虚拟机
+	vagrant halt		//关闭虚拟机并清空，保留配置
+	vagrant destroy 	//删除虚拟机
+
+//Debian系统管理--文件系统
+
+（/usr及其子文件夹通常用于存放只读数据）
+
+	/bin 			系统启动所需要的二进制文件
+	/usr/bin	 		系统自带的各类命令文件
+	/usr/local/bin 	用户自行安装的可执行文件
+	
+	/etc 				系统配置文件，只有root可以更改
+	/lib				系统运行时需要的共享库
+	/home			用户主目录的文件夹
+	/sbin			系统二进制文件，系统管理员可以使用的管理命令，如 reboot/halt
+	/tmp			临时文件夹
+	/var 				随时间变化的文件，如日志和缓存
+	/dev、/sys、/proc 虚拟文件系统
+
+
+（package manager 包管理器）
+
+//基础操作
+	
+	apt info PACKAGE				//查看某个软件包相关信息	
+	sudo apt install PACKAGE		//安装某个包
+	sudo apt remove PACKAGE		//删除某个包
+
+	sudo apt update				//获取最新的包列表
+	sudo apt upgrade				//将已安装的包都升级至包列表中的最新版本
+
+
+------------------------------------------------------------------------------------------------------------------
+1.2 POSIX Shell
+
+//将p设为变量
+	
+	p=arguments
+	gcc -Wall $p.c -o $p 						//使用的时候应用 $p
+
+	program="silly name"						//对于文件名含空格的处理，必须要有双引号，必须在单独行上进行变量设置
+	gcc -Wall "$program.c" -o "$program"		//尤其注意该处也应使用双引号
+
+//Pipes 
+
+	cat   FILENAME					//显示文件内容到标准输出
+	        FILE1 FILE2 ...					//显示多个文件内容
+	        FILE1 FILE2 > outputfile		//将 file1 和 file2 链接起来写入 outputfile
+		FILE1 >> FILE2				//将 file1 追加到 file2 末尾
+		-n FILENAME					//显示文件内容并将行号打印
+		-v FILENAME					//显示文件内容并且打印特殊字符，以‘^’
+		> FILENAME					//从标准输入中读取内容写入filename
+
+	head(tail) FILENAME					//显示文件前(后)十行内容
+		  	  -n num FILENAME			//显示文件前(后)num行
+		   				
+	
+	sort FILENAME					//按字典顺序升序排序并且输出
+		-r FILENAME					//降序排序并且输出
+		-u FILENAME					//排序后去除重复行并输出
+		-n FILENAME					//按数字顺序排序并输出
+
+	uniq FILENAME					//去除连续重复行
+		 -c FILENAME					//去除连续重复行并且统计重复次数
+		-d FILENAME					//仅显示重复行（只显示第一次）
+		-u FILENAME					//仅显示不重复行
+
+	grep [-iv] EXPRESSION				//-i表示不区分大小写，-v表示仅打印不匹配的行
+
+	sed -e COMMAND				//标准输入读入并根据命令进行转换，把结果写入输出
+
+	wc	FILENAME					//统计字数
+		-l FILENAME					//统计行数
+
+
+//正则表达式
+
+字符类（Character Classes）：
+.：匹配除换行符以外的任意单个字符。
+\w：匹配任意字母、数字或下划线字符。
+\d：匹配任意数字字符。
+\s：匹配任意空白字符，包括空格、制表符、换行符等。
+
+字符集合（Character Sets）：
+[abc]：匹配字符集合中的任意一个字符，即匹配 a、b 或 c 中的任意一个。
+[a-z]：匹配字符范围中的任意一个字符，即匹配从 a 到 z 之间的任意一个小写字母。
+
+重复次数（Repetitions）：
+*：匹配前面的元素零次或多次。
++：匹配前面的元素一次或多次。
+?：匹配前面的元素零次或一次。
+{n}：匹配前面的元素恰好 n 次。
+{n,}：匹配前面的元素至少 n 次。
+{n,m}：匹配前面的元素至少 n 次，至多 m 次。
+
+位置锚点（Anchors）：
+^：匹配输入字符串的开始位置。
+$：匹配输入字符串的结束位置。
+\b：匹配单词边界。
+\B：匹配非单词边界。
+
+分组和引用（Groups and Backreferences）：
+()：用来创建子表达式，可以对子表达式进行分组。
+\1, \2, ...：用来引用匹配的分组。
+---------------------------------------------------------------------------------------------------------------
+======================================================================
+
+
+Week 2:
+====================================================================== 
+2.1  Git
+---------------------------------------------------------------------------------------------------------------
+
+
+	apropos git				//检索系统帮助文档中带有git的
+	apropos git -a tutorial 	//检索系统帮助文档中带有git和tutorial的
+
+	git config --global user.name "YOURNAME"		//设置git账户名和邮件，只需要设计一次
+	git config --global user.email "YOUREMAIL"
+
+//在Vagrant 文件中配置git信息
+	
+	config.vm.provision :shell, privileged: false, inline: <<-SHELL
+    	git config --global user.name "YOURNAME"
+    	git config --global user.email "YOUREMAIL"
+	SHELL
+
+//GIt 相关指令
+	
+	git status					//查看当前状况
+	
+	git add FILENAME				//将指定文件添加到git管理
+	              .						//将当前文件夹所有文件加入git管理
+	
+	git commit -m "first file"		//将文件提交到本地仓库且备注为"first file"
+
+	git log 						//查看提交历史
+
+	git branch branchname		//创建新的分支
+			   -a					//显示所有分支信息
+			
+	git checkout branchname		//切换到指定分支
+	 		       -b branchname	//创建并切换到新分支
+	
+	git pull						//拉取远程仓库 git pull =  git fetch + git merge
+
+	git push						//本地仓库推送到远程仓库
+			--set-upstream origin develop		
+								//将develop分支推送到远程仓库并且设为当前分支的上有分支
+			--force origin branchname
+								//强制推送私有分支
+
+	git merge branchname			//把branchname 合并到当前分支
+	
+	git clone gitURL				//克隆远程仓库到本地
+
+	git remote show origin		//查看名为origin的远程仓库的信息
+
+	git fetch						//从远程仓库下载最新的提交
+							
+	git rebase branchname		//重设当前分支
+	
+//冲突解决
+
+	<<<<<<< HEAD
+	Created by NAME2.			//此处为本机更改		
+	=======
+	Created by NAME1.			//远程仓库内容
+	>>>>>>> b955a75c
+======================================================================
+
+Week 3 :
+====================================================================== 
+3.1  Shell Scripting
+---------------------------------------------------------------------------------------------------------------
+
+//文件权限管理
+
+	sudo adduser NAME  						//添加 NAME 用户
+	
+	su NAME								//更换至 NAME 用户
+	
+	su addgroup USERNAME GROUPNAME		//将用户添加到某个小组	
+
+	chgrp -R GROUPNAME DIRECTORY			//将目录内所有文件所属组改为 GROUPNAME
+
+
+//Setuid
+	
+	chmod u+s filename						//设置文件的SetUID，执行时将以文件所有者权限执行，而不是当前用户权限
+	
+	sudo find / -perm /4000					//查找设置了setuid的所有文件
+
+	# %wheel ALL=(ALL) NOPASSWD: ALL		//允许属于 wheel 组的所有用户以 root 权限执行任意命令，而且不需要输入密码。
+
+	# %sudo ALL=(ALL) ALL					//允许属于 sudo 组的所有用户以 root 权限执行任意命令，但需要输入密码。
+
+	//以root身份编辑sudoers文件 visudo ，添加以下行
+	%users ALL=(ALL) /sbin/reboot
+
+---------------------------------------------------------------------------------------------------------------
+3.2 Shell scripting
+
+//变量
+	
+	VAR="Hello World!"				//创建变量
+
+	echo "${VAR}"					//打印VAR
+
+	export VAR						//创建环境变量
+
+	unset VAR						//移除变量VAR
+
+	set -o nounset					//将'nounset'选项设为开启，如果使用未设置的变量会报错
+									//否则，如果使用未设置变量会返回''
+
+	echo "${NAME:? variable 1 passed to program}"
+									//    :?    用于检测变量是否被设置，如果未被设置，则输出后面的内容		
+	${0}								//脚本的名称或路径
+	${1}, ${2}, ${3}						//传入脚本的参数第一第二第三个
+	${#}								//传入参数的数量
+	${@} 							//包含所有参数的字符数组
+ 	${*}								//所有参数作为一整个字符串，空格分隔
+	$?								//上一个命令的退出状态码，成功就是0
+
+	 [ -x myscript.sh ];					//检测myscript.sh是否存在且可执行
+	 [[ -x myscript.sh  ]]; 				//同上
+
+	 if test -x myscript.sh; then			//同上
+		./myscript.sh
+	 fi
+
+	for file in *.py; do					//循环遍历所有当前目录下 .py 结尾的文件，执行 python file
+		python "${file}"
+	done
+
+	for n in 1 2 3 4 5; do				//-n表示输出不换行，输出 1 2 3 4 5
+		echo -n "${n} "
+	done
+
+	seq -s, 5							//-s ,    以  ,  作为分隔符
+	1,2,3,4,5
+	# IFS = In Field Separator			//IFS为内部字段分隔符，修改之后会以  ,  作为分隔，默认为空格
+	IFS=','							//定义变量时不能有空格
+	for n in $(seq -s, 5); do
+		echo -n "${n} "
+	done
+
+	case "${SHELL##*/}" in					//读取SHELL最后一个/之后的内容
+		bash) echo "I'm using bash!" ;;		//双分号结尾，相当于break
+		zsh) echo "Ooh fancy a zsh user!" ;;
+		fish) echo "Something's fishy!" ;;
+		*) echo "Ooh something else!" ;;
+	esac
+
+	echo "${SHELL}"						//输出SHELL变量
+	echo "${SHELL##*/}"					//输出变量最后一个/之后的内容
+	echo "$(basename "${SHELL}")"			//输出文件名，和上一个一样
+	echo "$(dirname "${SHELL}")"			//输出路径
+	
+	basename /path/to/file.txt .txt			//path是路径，
+										//表示从文件名移除后缀
+	
+	ps -A | grep -i firefox					//列出所有进程，不管大小写
+										//且含firefox
+
+	ps -A | grep -i firefox | awk '{print $1, $5}' //列出所有进程，不管大小写
+										//且含firefox，只显示1，5列
+
+	ps -A | grep -i firefox | awk '{print $1, $5}' | ghead -n -1
+										//去除了最后一行
+
+//基础逻辑
+	A; B				//先运行A，再运行B
+	A | B				//运行A，再把他的输出作为B的输入
+	A && B			//运行A，如果成功运行B
+	A || B			//运行A，如果不成功则运行B
+
+
+//pipe指令
+	
+	| 				//标准输出到标准输入，左侧命令输出作为右侧输入
+	>				//将命令的结果输出到指定文件（覆盖）
+	>>				//将结果输出到文件末尾（追加）
+	<				//将右侧文件（强调file）作为左侧的输入
+	<<<				//将右侧string作为左侧输入
+
+./program > log.txt 2>&1	//1表示标准输出，2表示标准错误，该语句表示将标准错误作为标准输出一起输出到log
+
+//Build Tools
+// C
+	
+	cc -c library.c -o library.o					//将 .c  文件编译为 .o文件（库）
+	cc hello.c library.o -o hello					//将两个文件链接到一起，生成一个可执行文件
+	
+	zip -r coursework.zip coursework			//解压文件
+	dot -Tpdf flowchart.dot -O flowchart.pdf		//输出pdf文件
+
+	
+//Makefile
+	
+	CC=clang
+	CFLAGS=-Wall -O3
+
+	.PHONY: all clean							//伪目标，保证all clean执行
+
+	all: hello coursework.zip flowchart.pdf
+
+	clean:
+		git clean -dfx
+
+	hello: hello.c library.o extra-library.o
+
+	%.o: %.c									//$@表示目标文件，这里是 .o 文件
+		$(CC) $(CFLAGS) -c -o $@ $<			//$<表示上一行相关的第一个文件，这里是 .c 文件
+		
+	%: %.c									//这里链接成可执行文件
+		$(CC) $(CFLAGS) -o $@ $<
+
+	%.zip: %
+		zip -r $@ $<
+
+	%.pdf: %.dot
+		dot -Tpdf $< -O $@
+
+// Strict Mode 在脚本顶部的语句
+	
+	set -e 			//脚本中如果任意语句失败则退出
+
+	set -u			//脚本中如果调用了未定义参数，视为错误
+
+	set -o pipefail	//如果pipe中某个语句错误，则直接返回该语句错误码
+
+
+
+Week 4 :
+=====================================================================================
+4.1  Debugging
+------------------------------------------------------------------------------------------------------------------------------------------	
+
+# gdb ./filename				//使用GDB来调试文件
+
+(gdb) b filename.c:14			//在该文件第14行设置断点
+
+(gdb) run <<<"hello"			//运行并将右侧作为标准输入
+
+(gdb) bt						//显示当前函数调用栈
+
+(gdb) inspect array			//打印array数组
+
+(gdb) inspect array_len			//打印一个int类数
+
+(gdb) d						//删除所有断点			
+
+
+// strace 工具
+
+$ strace ./filename <<<'Hello'			//使用strace 跟踪执行文件的系统调用
+
+$ strace -e '/open.*' ./filename <<<hello //-e指定要跟踪的系统调用，与后面的式子匹配
+
+// ltrace 工具
+
+$ ltrace ./filename doc/log.txt <<<hello	//使用ltrace跟踪库函数调用
+
+$ valgrind ./filename /dev/log.txt <<<hello	//使用valgrind监测内存使用情况
+
+
+
+
+
+Week 5 :
+=====================================================================================5.1  Database
+------------------------------------------------------------------------------------------------------------------------------------------
+
+//SQL intro
+
+	sudo apt install mariadb-{server,client}					//安装数据库
+	
+	sudo systemctl start mariadb							//使用 systemctl 启动mariadb
+	
+		
+	sudo systemctl status mariadb							//检查当前的工作状况
+	sudo journalctl -u mariadb								//查看工作日志
+
+	sudo systemctl enable mariadb							//设置默认启动数据库
+
+	mysqladmin -u root -p create mydatabase				//创建一个数据库
+	mysql -u root -p mydatabase							//连接到数据库
+
+	mysql -u root -p -e 'source /vagrant/sample-data.sql'		// -e 会解析后面的字符串
+														// -u root 设置用户为root
+														// -p 使用时需要输入密码
+MariaDB [(none)]>
+	SHOW DATABASES;									//显示可以访问的数据库
+	USE elections;										//选择elections数据库
+
+MariaDB [(elections)]>
+	SHOW TABLES;										//显示库中所有表格
+	SELECT * FROM table1;									//* 表示所有，显示table1的内容
+	DESCRIBE table1;										//显示table1中的列和类型信息
+	
+	SHOW CREATE TABLE table1;							//展示创建信息
+	
+	SELECT * FROM tablename								//展示表内前五个
+	LIMIT 5;
+
+	SELECT * FROM table1									//选取table1所有内容
+	INNER JOIN table2 ON table2.id = table1.two				//按一定规则和table2合并
+	INNER JOIN table3 ON table3.id = table1.three;			//按一定规则和table3合并
+
+	SELECT Candidate.name AS name,				//显示 Candidate里的name/votes/electorate列
+	Party.name AS party,							//Party里的name列作为新表的party列
+	Ward.name AS ward,							//Ward里的name列作为新表的ward列
+	votes,
+	electorate
+	FROM Candidate								//合并规则
+	INNER JOIN Party ON Party.id = Candidate.party
+	INNER JOIN Ward ON Ward.id = Candidate.ward;
+	
+	SELECT album.title AS album,
+	artist.name AS artist
+	FROM album
+	JOIN artist
+	ON album.artistid = artist.artistid
+	WHERE album LIKE '%Rock%'							//查询合并之后的 album 包含Rock的条目
+	LIMIT 5;
+	
+	SELECT artist.name AS artist,							//COUNT()组内统计个数
+		COUNT(album.title) as albums
+	FROM album
+	JOIN artist
+	ON album.artistid = artist.artistid
+	WHERE album.title LIKE '%Rock%'
+	GROUP BY artist										//按照合成之后的artist列分组
+	ORDER BY albums DESC								//按照合成之后的albums列降序排序
+	LIMIT 5;
+	
+	INSERT INTO tablename(value1, value2)
+	VALUES ("Software Tools", "COMS100012");				//在表中添加数据
+		
+	DROP TABLE IF EXISTS school;							//如果存在删除表格
+	exit													//或ctrl+D 退回到shell
+	
+
+//范式判断
+	
+
+	先找候选键
+	（只在左边出现 L ,若不能导出所有，则选左右都出现的LR与 只存在左边的组合）
+	（候选键中出现过的，为主属性，未出现的为非主属性）
+	（超键定义为候选键基础上任意组合，如若候选键为AB，AD，则ADC，AD，AB，ADB都为超键）
+
+
+
+	写出主属性
+		|
+	FD左边是超键						------Y------>BCNF
+		|
+	       N
+		|
+	当左侧不是超键时，FD右边是主属性	-----Y------->3NF
+		|
+	       N
+		|
+	任何候选键的真子集都不能推出非主属性------Y------>2NF
+		|
+	       N
+		|
+	     1NF
+
+
+
+
+
+
