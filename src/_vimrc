@@ -1,0 +1,5 @@
+set nobackup
+set nowritebackup
+set backspace=indent,eol,start
+set number
+vnoremap <C-c> :w !clip<CR><CR>
