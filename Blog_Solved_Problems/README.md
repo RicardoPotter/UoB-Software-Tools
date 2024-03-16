@@ -26,7 +26,7 @@
     -   有就直接改，没有就创一个文件，命令都是一样的`vim _vimrc`,以下内容添加进去就达成了关闭自动同步特性。
         ```vim
         set nobackup
-        set nowriteup
+        set nowritebackup
         ```
 - Vim下加载配置     
     - 	直接命令行一行进入Vim
