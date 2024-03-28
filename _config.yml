@@ -1,0 +1,11 @@
+title: Ricardo的博客
+email: pujinjian@hotmail.com
+description: >- # SoftwareTools辅学仓库&问题解决记录
+  SoftwareTools辅学仓库&问题解决记录
+baseurl: "/UoB-Software-Tools" # 项目的基础路径，如果你的仓库名不是`<你的用户名>.github.io`，则需要设置这个为`/<仓库名>`
+url: "" # 网站的URL，如果你有自定义域名，可以在这里设置
+twitter_username: unsettled
+github_username:  RicardoMiles & RicardoPotter
+
+theme: minima # Jekyll的主题，GitHub Pages支持几种主题，你可以选择一个
+
