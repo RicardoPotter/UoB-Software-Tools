@@ -7,5 +7,25 @@ url: "" # 网站的URL，如果你有自定义域名，可以在这里设置
 twitter_username: unsettled
 github_username:  RicardoMiles & RicardoPotter
 
-theme: jekyll-theme-beautiful # Jekyll的主题，GitHub Pages支持几种主题，你可以选择一个
+
+#导航
+navigation:
+  - title: Home
+    url: /
+  - title: Tutorials
+    url: /tutorials/
+  - title: Book Reviews
+    url: /book-reviews/
+
+#集合
+collections:
+  tutorials:
+    output: true
+    permalink: /tutorials/:path/
+  book-reviews:
+    output: true
+    permalink: /book-reviews/:path/
+
+
+theme: jekyll-theme-minima # Jekyll的主题，GitHub Pages支持几种主题，你可以选择一个
 
