@@ -27,5 +27,5 @@ collections:
     permalink: /book-reviews/:path/
 
 
-theme: jekyll-theme-minima # Jekyll的主题，GitHub Pages支持几种主题，你可以选择一个
+theme: jekyll-theme-architecta # Jekyll的主题，GitHub Pages支持几种主题，你可以选择一个
 
